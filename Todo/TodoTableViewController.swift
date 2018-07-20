@@ -43,7 +43,6 @@ class TodoTableViewController: UITableViewController {
     func addNewTodo(newiteM : Todo) -> Void {
         self.todos.append(newiteM)
         self.tableView.reloadData()
-        var t
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
