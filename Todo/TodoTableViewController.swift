@@ -1,55 +1,59 @@
-//
-//  TodoTableViewController.swift
-//  Todo
-//
-//  Created by macpro on 20/07/2018.
-//  Copyright © 2018 macpro. All rights reserved.
-//
-
 import UIKit
 
 class TodoTableViewController: UITableViewController {
-
-    var todos : [Todo] = [Todo]()
+    
+    var list : [TodoDataStore] = [TodoDataStore]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.todos = self.createToDos()
-       
+        self.get()
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-
-    func createToDos() -> [Todo] {
-        
-        return [Todo.init(text:"go to office" ,isImportant: true),Todo.init(text:"go to home" ,isImportant: true),Todo.init(text:"go to bed" ,isImportant: false)]
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-       return self.todos.count
+       return self.list.count
     }
 
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        let todo = self.todos[indexPath.row]
-        cell.textLabel?.text =  ( todo.IsImportant ?  "❗️"  : "") +  todo.Text
+        let todo = self.list[indexPath.row]
+        cell.textLabel?.text =  ( todo.isImportant ?  "❗️"  : "") +  todo.text!
         return cell
     }
     
-    func addNewTodo(newiteM : Todo) -> Void {
-        self.todos.append(newiteM)
-        self.tableView.reloadData()
+    func add(text:String,isImportant:Bool) -> Void {
+        
+        if let context = (UIApplication.shared.delegate as? AppDelegate)?.persistentContainer.viewContext {
+            let item = TodoDataStore(entity: TodoDataStore.entity(), insertInto: context)
+            item.text = text
+            item.isImportant = isImportant
+            do {
+                try context.save()
+                get()
+            }catch let error as NSError { print(error)}
+        }
+    }
+    
+    func get() {
+        if let context = (UIApplication.shared.delegate as? AppDelegate)?.persistentContainer.viewContext {
+            
+            if let result = try? context.fetch(TodoDataStore.fetchRequest()) as? [TodoDataStore] {
+                if let data = result {
+                   self.list = data
+                   self.tableView.reloadData()
+                }
+            }
+        }
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let item = self.todos[indexPath.row]
+        let item = self.list[indexPath.row]
         performSegue(withIdentifier: "moveToComplete", sender: item)
     }
-    
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if let nextCtrl = segue.destination as? AddTodoViewController {
@@ -58,8 +62,7 @@ class TodoTableViewController: UITableViewController {
         
         if let moveCtrl = segue.destination as? ShowTodoItemViewController {
             moveCtrl.previousCtrl = self
-            moveCtrl.todo = sender as! Todo
+            moveCtrl.todo = sender as! TodoDataStore
         }
     }
-
 }
